@@ -1,0 +1,144 @@
+import random
+
+class CartonBingo:
+    def _init_(self, nombre_jugador):
+        self.nombre_jugador = nombre_jugador
+        self.carton = self._generar_carton()
+        self.carton_marcado = [[False for _ in range(5)] for _ in range(5)]
+
+    def _generar_carton(self):
+        carton = []
+        # Columnas B (1-15), I (16-30), N (31-45), G (46-60), O (61-75)
+        for i in range(5):
+            col = random.sample(range(i * 15 + 1, (i + 1) * 15 + 1), 5)
+            carton.append(col)
+        carton[2][2] = 'X' 
+        return [[carton[j][i] for j in range(5)] for i in range(5)] # Transponer para filas y columnas correctas
+
+    def marcar_numero(self, numero):
+        for r in range(5):
+            for c in range(5):
+                if self.carton[r][c] == numero:
+                    self.carton_marcado[r][c] = True
+                    return True
+        return False
+
+    def ha_ganado(self):
+        # Comprobar si todas las casillas están marcadas
+        for r in range(5):
+            for c in range(5):
+                if self.carton[r][c] != 'X' and not self.carton_marcado[r][c]:
+                    return False
+        return True
+
+    def mostrar_carton(self):
+        print(f"\nCartón de {self.nombre_jugador}:")
+        print("-----------------------------")
+        for r in range(5):
+            fila_str = ""
+            for c in range(5):
+                numero = self.carton[r][c]
+                marcado = self.carton_marcado[r][c]
+                if numero == 'X':
+                    fila_str += f" {'X':>2} |"
+                elif marcado:
+                    fila_str += f" {'X':>2} |"
+                else:
+                    fila_str += f" {numero:>2} |"
+            print(fila_str)
+            print("-----------------------------")
+
+
+class Jugador:
+    def _init_(self, nombre):
+        self.nombre = nombre
+        self.carton = CartonBingo(nombre)
+
+    def mostrar_carton(self):
+        self.carton.mostrar_carton()
+
+    def marcar_numero(self, numero):
+        return self.carton.marcar_numero(numero)
+
+    def ha_ganado(self):
+        return self.carton.ha_ganado()
+
+
+class Bombo:
+    def _init_(self):
+        self.numeros_posibles = list(range(1, 76))
+        random.shuffle(self.numeros_posibles)
+        self.numeros_sacados = []
+
+    def sacar_numero(self):
+        if not self.numeros_posibles:
+            return None # No quedan números
+        numero_sacado = self.numeros_posibles.pop(0)
+        self.numeros_sacados.append(numero_sacado)
+        return numero_sacado
+
+
+class JuegoBingo:
+    def _init_(self):
+        self.jugadores = []
+        self.bombo = Bombo()
+
+
+    def agregar_jugador(self, nombre):
+        self.jugadores.append(Jugador(nombre))
+
+    def iniciar_juego(self):
+        if len(self.jugadores) < 2:
+            print("Se necesitan al menos 2 jugadores para empezar el juego.")
+            return
+
+        print("--- ¡Comienzo el juego! ---")
+
+        # Mostrar cartones iniciales
+        for jugador in self.jugadores:
+            jugador.mostrar_carton()
+
+        while True:
+      
+
+            numero_actual = self.bombo.sacar_numero()
+
+            if numero_actual is None:
+                print("\n¡Tanta monda pa ni mierda!")
+                break
+
+            print(f"\n Salio el numero {numero_actual}")
+
+            ganador = None
+            for jugador in self.jugadores:
+                if jugador.marcar_numero(numero_actual):
+                    print(f"El jugador {jugador.nombre} tiene el número {numero_actual} en su cartón.")
+                jugador.mostrar_carton() # Mostrar cartón después de marcar
+                if jugador.ha_ganado():
+                    ganador = jugador
+                    break
+
+            if ganador:
+                print(f"\n--- ¡BINGO! ¡buena mi perro, {ganador.nombre} ha ganado! ---")
+                self.bombo.numeros_sacados.sort()
+                print(self.bombo.numeros_sacados)
+                break
+
+if _name_ == "_main_":
+    juego = JuegoBingo()
+
+    num_jugadores = 0
+    while num_jugadores < 2:
+        try:
+            num_jugadores_str = input("Pon cuantas personas jugaran (mínimo 2): ")
+            num_jugadores = int(num_jugadores_str)
+            if num_jugadores < 2:
+                print("El número de jugadores debe ser al menos 2.")
+        except ValueError:
+            print("Entrada inválida. Por favor, introduce un número.")
+
+    for i in range(num_jugadores):
+        nombre = input(f"pon el nombre del jugador: {i+1}: ")
+        juego.agregar_jugador(nombre)
+
+    juego.iniciar_juego()
